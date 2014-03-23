@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import nachos.machine.Lib;
 import nachos.machine.Machine;
 import nachos.machine.TCB;
-import nachos.test.TestAlarm;
-import nachos.test.TestJoin;
+import nachos.test.*;
+
 
 /**
  * A KThread is a thread that can be used to execute Nachos kernel code. Nachos
@@ -439,7 +439,8 @@ public class KThread {
      */
     public static void selfTest() {
     	//selfTestJoin();
-    	selfTestAlarm();
+    	//selfTestAlarm();
+    	selfTestCommunicator();
     	
     }
     
@@ -452,9 +453,17 @@ public class KThread {
     	Lib.debug(dbgThread, "Enter KThread.selfTest");    	
     	new TestJoin().selfTest();
     }
+    
+    public static void selfTestCommunicator() {
+    	Lib.debug(dbgThread, "Enter KThread.selfTest");    	
+    	new TestCommunicator().selfTest();
+    }
 
-    private static final char dbgThread = 't';
+    
+    
+	private static final char dbgThread = 't';
 
+	
     /**
      * Additional state used by schedulers.
      *
@@ -473,8 +482,7 @@ public class KThread {
      * ready (on the ready queue but not running), running, or blocked (not
      * on the ready queue and not running).
      */
-    private ArrayList<KThread> joinList = new ArrayList<KThread>();
-    //private ArrayList<KThread> joinList = new ArrayList<KThread>();
+    private ArrayList<KThread> joinList = new ArrayList<KThread>();   
     private int status = statusNew;
     private String name = "(unnamed thread)";
     private Runnable target;
@@ -490,7 +498,7 @@ public class KThread {
     private static ThreadQueue readyQueue = null;
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
-    private static KThread idleThread = null;
-    //public static Alarm alarma= new Alarm();
+    private static KThread idleThread = null;    
     private long timeOfWait=0;
+    
 }

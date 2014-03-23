@@ -1,6 +1,7 @@
 package nachos.threads;
 
-import nachos.machine.*;
+import java.awt.color.CMMException;
+import java.util.ArrayList;
 
 /**
  * A <i>communicator</i> allows threads to synchronously exchange 32-bit
@@ -14,8 +15,13 @@ public class Communicator {
      * Allocate a new communicator.
      */
     public Communicator() {
+    	
+    	this.communicationLock = new Lock();
+    	this.speakCondition = new Condition(this.communicationLock);
+    	this.listenCondition = new Condition(this.communicationLock);
+    	this.numMsg = 0;
+    	this.existMsg = false;
     }
-
     /**
      * Wait for a thread to listen through this communicator, and then transfer
      * <i>word</i> to the listener.
@@ -27,6 +33,14 @@ public class Communicator {
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
+    	communicationLock.acquire();    	
+    	while(numMsg == 0 || existMsg){
+    		speakCondition.sleep();
+    	}    	
+    	msg = word;
+    	existMsg = true;
+    	listenCondition.wake();        	
+    	communicationLock.release();
     }
 
     /**
@@ -36,6 +50,21 @@ public class Communicator {
      * @return	the integer transferred.
      */    
     public int listen() {
-	return 0;
+    	communicationLock.acquire();    	
+    	numMsg++;    	
+    	while(!existMsg){
+    		speakCondition.wake();
+    		listenCondition.sleep();
+    	}
+    	numMsg--;    	
+    	existMsg = false;
+    	communicationLock.release();
+    	return msg;
     }
+    private Lock communicationLock;
+    private Condition speakCondition;
+    private Condition listenCondition;  
+    private int numMsg;    
+    private int msg;
+    private boolean existMsg;    
 }
