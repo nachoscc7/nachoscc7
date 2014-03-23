@@ -17,8 +17,8 @@ public class Communicator {
     public Communicator() {
     	
     	this.communicationLock = new Lock();
-    	this.speakCondition = new Condition(this.communicationLock);
-    	this.listenCondition = new Condition(this.communicationLock);
+    	this.speakCondition = new Condition2(this.communicationLock);
+    	this.listenCondition = new Condition2(this.communicationLock);
     	this.numMsg = 0;
     	this.existMsg = false;
     }
@@ -62,8 +62,8 @@ public class Communicator {
     	return msg;
     }
     private Lock communicationLock;
-    private Condition speakCondition;
-    private Condition listenCondition;  
+    private Condition2 speakCondition;
+    private Condition2 listenCondition;  
     private int numMsg;    
     private int msg;
     private boolean existMsg;    

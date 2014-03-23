@@ -1,5 +1,7 @@
 package nachos.threads;
 
+import java.util.ArrayList;
+
 import nachos.machine.*;
 
 /**
@@ -31,11 +33,24 @@ public class Condition2 {
      * automatically reacquire the lock before <tt>sleep()</tt> returns.
      */
     public void sleep() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-
-	conditionLock.release();
-
-	conditionLock.acquire();
+		Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+		Machine.interrupt().disable();
+		KThread waitThread ;
+		conditionLock.release();
+		if(KThread.currentThread().getStatus()==KThread.currentThread().isFinished()){
+			Machine.interrupt().enable();
+			return;		
+		}
+		else{
+			waitThread = KThread.currentThread();		
+			lockThreads.add(waitThread);						
+			KThread.sleep();						
+		}
+		conditionLock.acquire();
+		Machine.interrupt().enable();
+		
+		
+		
     }
 
     /**
@@ -43,7 +58,17 @@ public class Condition2 {
      * current thread must hold the associated lock.
      */
     public void wake() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+    	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+    	
+    	if(!lockThreads.isEmpty()){
+    		KThread waiKThread = lockThreads.remove(0);
+    		if(waiKThread!=null){
+    			Machine.interrupt().disable();
+    			waiKThread.ready();
+    			Machine.interrupt().enable();
+    		}
+    	}
+    	
     }
 
     /**
@@ -52,7 +77,10 @@ public class Condition2 {
      */
     public void wakeAll() {
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+	while(!lockThreads.isEmpty()){
+		wake();
+	}
     }
-
+    private ArrayList<KThread> lockThreads = new ArrayList<KThread>();
     private Lock conditionLock;
 }
