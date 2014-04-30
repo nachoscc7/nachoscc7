@@ -440,14 +440,24 @@ public class KThread {
     public static void selfTest() {
     	//selfTestJoin();
     	//selfTestAlarm();
-    	selfTestCommunicator();
+    	//selfTestCommunicator();
+    	//selfTestPriority();
+   
     	
     }
+    
+    public static void selfTestPriority(){
+    	Lib.debug(dbgThread, "Enter KThread.selfTestPriority");    	
+    	//new TestPriority().selfTest();
+    	new TestPriority().selfTestLock();
+    }
+    
     
     public static void selfTestAlarm() {
     	Lib.debug(dbgThread, "Enter KThread.selfTestAlarm");    	
     	new TestAlarm().selfTest();
      }
+    
     
     public static void selfTestJoin() {
     	Lib.debug(dbgThread, "Enter KThread.selfTest");    	
@@ -464,6 +474,7 @@ public class KThread {
 	private static final char dbgThread = 't';
 
 	
+	 
     /**
      * Additional state used by schedulers.
      *
