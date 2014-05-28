@@ -71,6 +71,7 @@ public class Alarm {
 	    KThread.sleep();
 	    Machine.interrupt().enable();    
     }
+    
     public static void selfTest() {
     	System.out.println("Enter Alarm.selfTest");
     	Alarm a1 = new Alarm();

@@ -9,21 +9,21 @@ public class Boat
     static int child,childBeachA,adult,adultsBeachA;
     static Lock lockBeachA,lockBeachB,lockAdults;
     static int countChildren;
-    static Condition conditionBeachA,conditionBeachB,conditionAdults;
+    static Condition2 conditionBeachA,conditionBeachB,conditionAdults;
     static boolean blockAdults;
     static boolean blockChild;
     static Runnable threadAdults,threadChildren;
     static KThread threadPersonAdults;
     static Lock lockSimulation = new Lock();
-	static Condition simulation = new Condition(lockSimulation);
+	static Condition2 simulation = new Condition2(lockSimulation);
 	static Lock lockBegin = new Lock();
-	static Condition simulationBegin = new Condition(lockBegin);
+	static Condition2 simulationBegin = new Condition2(lockBegin);
     public static void selfTest()
     {
 	BoatGrader b = new BoatGrader();
 	
 	System.out.println("\n ***Testing Boats with only 2 children***");
-	begin(1, 2, b);
+	begin(4, 5, b);
 
 	//System.out.println("\n ***Testing Boats with 2 children, 1 adult***");
   	//begin(1, 2, b);
@@ -41,9 +41,9 @@ public class Boat
     	adult = adultsBeachA = adults;
     	lockAdults= lockBeachB= lockBeachA = new Lock();
     	
-    	conditionBeachA= new Condition(lockBeachA);
-    	conditionBeachB = new Condition(lockBeachB);
-    	conditionAdults = new Condition(lockAdults);
+    	conditionBeachA= new Condition2(lockBeachA);
+    	conditionBeachB = new Condition2(lockBeachB);
+    	conditionAdults = new Condition2(lockAdults);
     	blockChild = blockAdults=true;
     	threadAdults = threadChildren = null;
    

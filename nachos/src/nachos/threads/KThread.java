@@ -437,6 +437,8 @@ public class KThread {
     /**
      * Tests whether this module is working.
      */
+     
+    
     public static void selfTest() {
     	//selfTestJoin();
     	//selfTestAlarm();
@@ -444,7 +446,9 @@ public class KThread {
     	//selfTestPriority();
    
     	
+    	
     }
+    
     
     public static void selfTestPriority(){
     	Lib.debug(dbgThread, "Enter KThread.selfTestPriority");    	
@@ -468,7 +472,8 @@ public class KThread {
     	Lib.debug(dbgThread, "Enter KThread.selfTest");    	
     	new TestCommunicator().selfTest();
     }
-
+ 
+    
     
     
 	private static final char dbgThread = 't';

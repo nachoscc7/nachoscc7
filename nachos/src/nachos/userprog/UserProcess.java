@@ -5,6 +5,9 @@ import nachos.threads.*;
 import nachos.userprog.*;
 
 import java.io.EOFException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
 
 /**
  * Encapsulates the state of a user process that is not contained in its
@@ -27,6 +30,11 @@ public class UserProcess {
 	pageTable = new TranslationEntry[numPhysPages];
 	for (int i=0; i<numPhysPages; i++)
 	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+	
+	tableOpenFile = new HashMap<Integer, OpenFile>();
+	listFileDescriptor = new LinkedList<Integer>(Arrays.asList(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15));
+	tableOpenFile.put(getNextFileDescriptor(), UserKernel.console.openForReading());
+	tableOpenFile.put(getNextFileDescriptor(), UserKernel.console.openForWriting());
     }
     
     /**
@@ -348,15 +356,15 @@ public class UserProcess {
 
 
     private static final int
-        syscallHalt = 0,
-	syscallExit = 1,
-	syscallExec = 2,
-	syscallJoin = 3,
+    syscallHalt   = 0,
+	syscallExit   = 1,
+	syscallExec   = 2,
+	syscallJoin   = 3,
 	syscallCreate = 4,
-	syscallOpen = 5,
-	syscallRead = 6,
-	syscallWrite = 7,
-	syscallClose = 8,
+	syscallOpen   = 5,
+	syscallRead   = 6,
+	syscallWrite  = 7,
+	syscallClose  = 8,
 	syscallUnlink = 9;
 
     /**
@@ -388,18 +396,148 @@ public class UserProcess {
      * @return	the value to be returned to the user.
      */
     public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
-	switch (syscall) {
-	case syscallHalt:
-	    return handleHalt();
+    	switch (syscall) {
+        	case syscallHalt:
+        	    return handleHalt();
 
+        	
+            //case syscallExit:
+            //    return 0; 
 
-	default:
-	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
-	    Lib.assertNotReached("Unknown system call!");
-	}
-	return 0;
+            //case syscallExec:
+            //    return 0;
+
+            //case syscallJoin:
+            //    return 0;
+
+            case syscallCreate: return handleCreat(a0);
+
+            case syscallOpen:   return handleOpen(a0);
+
+            case syscallRead:   return handleRead(a0,a1,a2);
+
+            case syscallWrite:  return handleWrite(a0,a1,a2);
+
+            case syscallClose:  return handleClose(a0);
+
+            case syscallUnlink: return handleUnlink(a0);
+            
+
+        	default:
+        	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
+        	    Lib.assertNotReached("Unknown system call!");
+        	}
+    	return 0;
     }
-
+    //retorna el siguiente file descriptor
+    Integer getNextFileDescriptor(){    	
+    	return !listFileDescriptor.isEmpty() ? listFileDescriptor.removeFirst() : null;
+    }
+    
+    int handleCreat(int arg){
+    	String filename = readVirtualMemoryString(arg, 255);
+    	if(filename!=null){
+    		return Open(filename,true);        		
+    	}    	
+        return -1;
+    }
+    
+    int handleOpen(int arg){
+    	String filename = readVirtualMemoryString(arg, 255);
+    	if(filename!=null){
+    		return Open(filename,false);        		
+    	}    	
+        return -1;
+    }
+    
+    int Open(String filename,boolean create){
+    	OpenFile file = ThreadedKernel.fileSystem.open(filename, create);
+    	if(file != null){
+    		Integer fileDescriptor;
+        	if((fileDescriptor = getNextFileDescriptor()) != null){
+            	tableOpenFile.put(fileDescriptor, file);
+            	return fileDescriptor.intValue();
+        	}            		            	
+    	}
+    	return -1;
+    }
+    
+    int handleRead(int fileDescriptor,int buffer,int count){
+    	
+    	OpenFile file = tableOpenFile.get(Integer.valueOf(fileDescriptor));
+    	if(file != null){
+    		byte[] data = new byte[pageSize];
+    		int offset=0;
+    		while(file.length() > offset && count>0){
+    			int length = count;
+    			
+    			if(count>pageSize) 
+    				length = pageSize;    			
+    			int readedBytes = file.read(data, 0, length);
+    			int writedBytes = writeVirtualMemory(buffer, data,offset,readedBytes);
+    			
+    			if(readedBytes != writedBytes) 
+    				return -1;
+    			
+    			count -= readedBytes;
+    			offset += readedBytes;    			    			    		
+    		}
+    		return offset;
+    		
+    	}
+    	return -1;
+    }
+    
+int handleWrite(int fileDescriptor,int buffer,int count){
+    	
+    	OpenFile file = tableOpenFile.get(Integer.valueOf(fileDescriptor));
+    	if(file != null){
+    		byte[] data = new byte[pageSize];
+    		int offset=0;
+    		while(count>0){
+    			int length = count;
+    			
+    			if(count>pageSize) 
+    				length = pageSize;    	
+    			
+    			int readedBytes = readVirtualMemory(buffer, data, offset, length);
+    			
+    			if(count > 0 && readedBytes == 0) 
+    				break;
+    			
+    			int writedBytes = file.write(data, 0, readedBytes);
+    			
+    			if(readedBytes != writedBytes) 
+    				return -1;
+    			
+    			count -= readedBytes;
+    			offset += readedBytes;    			    			    		
+    		}
+    		return offset;
+    		
+    	}
+    	return -1;
+    }
+   
+	int handleClose(int fileDescriptor){
+		OpenFile file = tableOpenFile.get(Integer.valueOf(fileDescriptor));
+		if(file != null){
+			file.close();
+			tableOpenFile.remove(Integer.valueOf(fileDescriptor));
+			listFileDescriptor.add(Integer.valueOf(fileDescriptor));
+			return 0;
+		}
+		return -1;
+	}
+	
+	int handleUnlink(int name){
+		String fileName = readVirtualMemoryString(name, 255);
+		if(fileName != null){
+			if(ThreadedKernel.fileSystem.remove(fileName)) return 0;			
+		}
+		return -1;
+	}
+    
     /**
      * Handle a user exception. Called by
      * <tt>UserKernel.exceptionHandler()</tt>. The
@@ -429,7 +567,10 @@ public class UserProcess {
 	    Lib.assertNotReached("Unexpected exception");
 	}
     }
-
+    
+    final int MAXFILEDESCRIPTOR = 16;
+    private HashMap<Integer, OpenFile> tableOpenFile;
+    private LinkedList<Integer> listFileDescriptor;
     /** The program being run by this process. */
     protected Coff coff;
 
